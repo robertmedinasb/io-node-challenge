@@ -63,14 +63,19 @@ class PaymentsService extends Construct {
             statusCode: "201",
             responseTemplates: {
               "application/json": `
-                #set($outputString = $input.path('$.output'))
-                #set($outputJson = $util.parseJson($outputString))
-                {
-                    "message": "$util.escapeJavaScript($outputJson.value.message)",
-                    #if($util.escapeJavaScript($outputJson.value.transactionId) != "")
-                        "transactionId": "$util.escapeJavaScript($outputJson.value.transactionId)"
-                    #end
-                }
+                #if($input.path('$.status').toString().equals("FAILED"))
+                  #set($context.responseOverride.status = 400)
+                  {
+                    "message": "$input.path('$.cause')"
+                  }
+                #else
+                  #set($outputString = $input.path('$.output'))
+                  #set($outputJson = $util.parseJson($outputString))
+                  {
+                      "message": "$util.escapeJavaScript($outputJson.value.message)",
+                      "transactionId": "$util.escapeJavaScript($outputJson.value.transactionId)"
+                  }
+                #end
             `,
             },
             responseParameters: {

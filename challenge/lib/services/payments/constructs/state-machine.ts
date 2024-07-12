@@ -7,6 +7,7 @@ import {
   Choice,
   Condition,
   DefinitionBody,
+  Fail,
   JsonPath,
   LogLevel,
   Pass,
@@ -40,8 +41,8 @@ export class PaymentStateMachine extends Construct {
       retention: RetentionDays.ONE_DAY,
     });
 
-    const errorMessage = new Pass(this, "Something was wrong", {
-      parameters: TaskInput.fromObject({ message: "Something was wrong" }),
+    const errorMessage = new Fail(this, "Something was wrong", {
+      cause: "Something was wrong",
     });
 
     const validateUserPass = new Pass(this, "Validate User");
