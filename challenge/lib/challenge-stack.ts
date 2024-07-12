@@ -3,6 +3,7 @@ import { Construct } from "constructs";
 import { ApiGatewayRestApi } from "./infrastructure/api/api-gateway-rest-api";
 import DynamoDBTables from "./infrastructure/tables/dynamodb-tables";
 import PaymentsService from "./services/payments";
+import { TransactionsService } from "./services/transactions";
 
 export class ChallengeStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -22,5 +23,7 @@ export class ChallengeStack extends cdk.Stack {
       activityTable,
       restApi,
     });
+
+    new TransactionsService(this, "TransactionsService", { restApi, transactionsTable });
   }
 }

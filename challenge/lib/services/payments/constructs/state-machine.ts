@@ -50,7 +50,7 @@ export class PaymentStateMachine extends Construct {
       resultPath: "$.dynamodGetItemResponse",
       table: props.usersTable,
       key: {
-        userId: DynamoAttributeValue.fromString(JsonPath.stringAt("$.body.userId")),
+        userId: DynamoAttributeValue.fromString(JsonPath.stringAt("$.userId")),
       },
     });
 
@@ -90,7 +90,7 @@ export class PaymentStateMachine extends Construct {
         outputPath: "$.Payload",
         payload: TaskInput.fromObject({
           user: JsonPath.objectAt("$.user"),
-          amount: JsonPath.stringAt("$.body.amount"),
+          amount: JsonPath.stringAt("$.amount"),
         }),
       }
     );

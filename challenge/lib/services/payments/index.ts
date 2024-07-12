@@ -1,8 +1,7 @@
 import {
-  Integration,
-  IntegrationType,
   PassthroughBehavior,
   RestApi,
+  StepFunctionsIntegration,
 } from "aws-cdk-lib/aws-apigateway";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import {
@@ -55,19 +54,9 @@ class PaymentsService extends Construct {
       },
     });
 
-    const stateMachineIntegration = new Integration({
-      type: IntegrationType.AWS,
-      integrationHttpMethod: "POST",
-      uri: `arn:aws:apigateway:${process.env.AWS_REGION}:states:action/StartSyncExecution`,
-      options: {
-        passthroughBehavior: PassthroughBehavior.NEVER,
-        requestTemplates: {
-          "application/json": `{
-              "input": "{\\"body\\": $util.escapeJavaScript($input.json('$'))}",
-            "stateMachineArn": "${stateMachine.stateMachineArn}"
-          }`,
-        },
-        credentialsRole: invokeStepfunctionApiRole,
+    const stateMachineIntegration = StepFunctionsIntegration.startExecution(
+      stateMachine,
+      {
         integrationResponses: [
           {
             selectionPattern: "200",
@@ -93,8 +82,16 @@ class PaymentsService extends Construct {
             },
           },
         ],
-      },
-    });
+        requestTemplates: {
+          "application/json": `{
+            "input": "$util.escapeJavaScript($input.json('$'))",
+            "stateMachineArn": "${stateMachine.stateMachineArn}"
+          }`,
+        },
+        passthroughBehavior: PassthroughBehavior.NEVER,
+        credentialsRole: invokeStepfunctionApiRole,
+      }
+    );
 
     props.restApi.root
       .addResource("payments")

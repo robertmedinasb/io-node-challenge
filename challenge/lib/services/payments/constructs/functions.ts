@@ -4,7 +4,7 @@ import { Architecture, StartingPosition } from "aws-cdk-lib/aws-lambda";
 import { DynamoEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
-import path = require("path");
+import path from "path";
 
 interface PaymentsServiceFunctionsProps {
   activityTable: Table;
