@@ -10,7 +10,7 @@ type Event = {
   amount: number;
 };
 
-type Result = {
+export type Result = {
   transaction: {
     message: string;
     transactionId: string;

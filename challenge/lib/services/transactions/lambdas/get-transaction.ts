@@ -35,8 +35,6 @@ const getTransaction: APIGatewayProxyHandler = async (event: APIGatewayEvent) =>
           })
         );
 
-        console.log("response", JSON.stringify(response));
-
         const item = response.Item as DynamoDBTransaction;
 
         if (item) {

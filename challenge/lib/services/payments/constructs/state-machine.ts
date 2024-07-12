@@ -4,6 +4,7 @@ import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import {
+  Chain,
   Choice,
   Condition,
   DefinitionBody,
@@ -31,6 +32,13 @@ interface PaymentStateMachineProps {
 
 export class PaymentStateMachine extends Construct {
   readonly stateMachine: StateMachine;
+  readonly getUserById: DynamoGetItem;
+  readonly unmarshalDynamoDBResponse: Pass;
+  readonly putTransactionIntoDynamoDB: DynamoPutItem;
+  readonly executePaymentsLambdaInvoke: LambdaInvoke;
+  readonly paymentExecutionResultChoice: Choice;
+  readonly validateUserSuccessChoice: Choice;
+  readonly definition: Chain;
 
   constructor(scope: Construct, id: string, props: PaymentStateMachineProps) {
     super(scope, id);
@@ -55,6 +63,8 @@ export class PaymentStateMachine extends Construct {
       },
     });
 
+    this.getUserById = getUserById;
+
     const unmarshalDynamoDBResponse = new Pass(this, "Unmarshal DynamoDB user response", {
       inputPath: JsonPath.stringAt("$.dynamodGetItemResponse.Item"),
       resultPath: "$.user",
@@ -64,6 +74,8 @@ export class PaymentStateMachine extends Construct {
         "lastName.$": "$.lastName.S",
       },
     });
+
+    this.unmarshalDynamoDBResponse = unmarshalDynamoDBResponse;
 
     const putTransactionIntoDynamoDB = new DynamoPutItem(
       this,
@@ -83,6 +95,8 @@ export class PaymentStateMachine extends Construct {
       }
     );
 
+    this.putTransactionIntoDynamoDB = putTransactionIntoDynamoDB;
+
     const executePaymentsLambdaInvoke = new LambdaInvoke(
       this,
       "Execute Payments Lambda",
@@ -96,6 +110,8 @@ export class PaymentStateMachine extends Construct {
       }
     );
 
+    this.executePaymentsLambdaInvoke = executePaymentsLambdaInvoke;
+
     const paymentExecutionResultChoice = new Choice(this, "Payment execution success?")
       .when(
         Condition.numberEquals("$.putItemResponse.SdkHttpMetadata.HttpStatusCode", 200),
@@ -108,6 +124,8 @@ export class PaymentStateMachine extends Construct {
       )
       .otherwise(errorMessage);
 
+    this.paymentExecutionResultChoice = paymentExecutionResultChoice;
+
     const validateUserSuccessChoice = new Choice(this, "User validation success?")
       .when(Condition.isNotPresent("$.dynamodGetItemResponse.Item"), errorMessage)
       .otherwise(
@@ -116,8 +134,11 @@ export class PaymentStateMachine extends Construct {
           .next(putTransactionIntoDynamoDB)
           .next(paymentExecutionResultChoice)
       );
+    this.validateUserSuccessChoice = validateUserSuccessChoice;
 
     const definition = validateUserPass.next(getUserById).next(validateUserSuccessChoice);
+
+    this.definition = definition;
 
     this.stateMachine = new StateMachine(this, "PaymentsStateMachine", {
       definitionBody: DefinitionBody.fromChainable(definition),

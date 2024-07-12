@@ -10,15 +10,18 @@ class DynamoDBTables extends Construct {
     super(scope, id);
 
     this.users = new Table(this, "users", {
+      tableName: "users",
       partitionKey: { name: "userId", type: AttributeType.STRING },
     });
 
     this.transactions = new Table(this, "transactions", {
+      tableName: "transactions",
       partitionKey: { name: "transactionId", type: AttributeType.STRING },
       stream: StreamViewType.NEW_IMAGE,
     });
 
     this.activity = new Table(this, "activity", {
+      tableName: "activity",
       partitionKey: { name: "activityId", type: AttributeType.STRING },
     });
   }

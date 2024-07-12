@@ -12,6 +12,7 @@ import {
 } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
 
+import { StateMachine } from "aws-cdk-lib/aws-stepfunctions";
 import { PaymentsServiceFunctions } from "./constructs/functions";
 import { PaymentStateMachine } from "./constructs/state-machine";
 
@@ -23,6 +24,10 @@ interface PaymentsServiceProps {
 }
 
 class PaymentsService extends Construct {
+  readonly stateMachine: StateMachine;
+  readonly paymentStateMachine: PaymentStateMachine;
+  readonly stateMachineIntegration: StepFunctionsIntegration;
+
   constructor(scope: Construct, id: string, props: PaymentsServiceProps) {
     super(scope, id);
 
@@ -35,10 +40,14 @@ class PaymentsService extends Construct {
       }
     );
 
-    const { stateMachine } = new PaymentStateMachine(this, "PaymentsStateMachine", {
+    const paymentStateMachine = new PaymentStateMachine(this, "PaymentsStateMachine", {
       ...props,
       executePaymentsLambda,
     });
+
+    this.paymentStateMachine = paymentStateMachine;
+
+    this.stateMachine = paymentStateMachine.stateMachine;
 
     const invokeStepfunctionApiRole = new Role(this, `${id}-role`, {
       assumedBy: new ServicePrincipal("apigateway.amazonaws.com"),
@@ -47,7 +56,7 @@ class PaymentsService extends Construct {
           statements: [
             new PolicyStatement({
               actions: ["states:StartSyncExecution"],
-              resources: [stateMachine.stateMachineArn],
+              resources: [paymentStateMachine.stateMachine.stateMachineArn],
             }),
           ],
         }),
@@ -55,7 +64,7 @@ class PaymentsService extends Construct {
     });
 
     const stateMachineIntegration = StepFunctionsIntegration.startExecution(
-      stateMachine,
+      paymentStateMachine.stateMachine,
       {
         integrationResponses: [
           {
@@ -90,13 +99,15 @@ class PaymentsService extends Construct {
         requestTemplates: {
           "application/json": `{
             "input": "$util.escapeJavaScript($input.json('$'))",
-            "stateMachineArn": "${stateMachine.stateMachineArn}"
+            "stateMachineArn": "${paymentStateMachine.stateMachine.stateMachineArn}"
           }`,
         },
         passthroughBehavior: PassthroughBehavior.NEVER,
         credentialsRole: invokeStepfunctionApiRole,
       }
     );
+
+    this.stateMachineIntegration = stateMachineIntegration;
 
     props.restApi.root
       .addResource("payments")

@@ -6,6 +6,8 @@ import PaymentsService from "./services/payments";
 import { TransactionsService } from "./services/transactions";
 
 export class ChallengeStack extends cdk.Stack {
+  readonly paymentService: PaymentsService;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -17,7 +19,7 @@ export class ChallengeStack extends cdk.Stack {
 
     const { restApi } = new ApiGatewayRestApi(this, "RestApi");
 
-    new PaymentsService(this, "PaymentsService", {
+    this.paymentService = new PaymentsService(this, "PaymentsService", {
       transactionsTable,
       usersTable,
       activityTable,
