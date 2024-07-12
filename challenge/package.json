@@ -5,13 +5,14 @@
     "challenge": "bin/challenge.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
     "deploy": "dotenv -- cdk deploy",
     "synth": "dotenv -- cdk synth",
-    "bootstrap": "dotenv -- cdk bootstrap"
+    "bootstrap": "dotenv -- cdk bootstrap",
+    "destroy": "dotenv -- cdk destroy"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.141",
