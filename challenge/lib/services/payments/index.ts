@@ -12,6 +12,7 @@ import {
   ServicePrincipal,
 } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
+
 import { PaymentsServiceFunctions } from "./constructs/functions";
 import { PaymentStateMachine } from "./constructs/state-machine";
 
@@ -29,6 +30,10 @@ class PaymentsService extends Construct {
     const { executePayments: executePaymentsLambda } = new PaymentsServiceFunctions(
       this,
       "PaymentsServiceFunctions",
+      {
+        activityTable: props.activityTable,
+        transactionsTable: props.transactionsTable,
+      }
     );
 
     const { stateMachine } = new PaymentStateMachine(this, "PaymentsStateMachine", {
